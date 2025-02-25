@@ -1,19 +1,21 @@
-const { ethers } = require("ethers");
-const Provider = require("../lib/provider");
-const Utils = require("../lib/utils");
-const ApiService = require("./ApiService");
-const config = require("../config/config.json");
+const Provider = require("../core/Provider").getInstance;
+const Utils = require("../core/Utils");
+const ExplorerApi = require("../api/ExplorerApi");
+const config = require("../../config/config");
 
 class BaseService {
   constructor() {
     try {
-      const providerInstance = new Provider();
+      const providerInstance = Provider();
       this.provider = providerInstance.getProvider();
       this.wallet = providerInstance.getWallet();
       this.utils = Utils;
-      this.api = new ApiService();
+      this.explorerApi = new ExplorerApi();
     } catch (error) {
-      console.error("Failed to initialize BaseService:", error);
+      Utils.logger(
+        "error",
+        `Failed to initialize BaseService: ${error.message}`
+      );
       throw error;
     }
   }
@@ -23,8 +25,60 @@ class BaseService {
       await this.provider.getNetwork();
       return true;
     } catch (error) {
-      console.error("Service initialization failed:", error);
+      Utils.logger("error", `Service initialization failed: ${error.message}`);
       return false;
+    }
+  }
+
+  async wrapMON(amount) {
+    try {
+      await this.checkGasPrice();
+
+      Utils.logger(
+        "info",
+        `Wrapping ${Utils.formatAmount(amount)} MON to WMON via Beanswap`
+      );
+
+      const result = await this.beanswapContract.swapExactETHForTokens(
+        this.beanswapContract.WMON_ADDRESS,
+        amount,
+        this.wallet.address
+      );
+
+      return {
+        status: result.status === 1 ? "Success" : "Failed",
+        txHash: result.hash,
+        url: Utils.logTransaction(result.hash),
+      };
+    } catch (error) {
+      Utils.logger("error", `Error wrapping MON: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async unwrapMON(amount) {
+    try {
+      await this.checkGasPrice();
+
+      Utils.logger(
+        "info",
+        `Unwrapping ${Utils.formatAmount(amount)} WMON to MON via Beanswap`
+      );
+
+      const result = await this.beanswapContract.swapExactTokensForETH(
+        this.beanswapContract.WMON_ADDRESS,
+        amount,
+        this.wallet.address
+      );
+
+      return {
+        status: result.status === 1 ? "Success" : "Failed",
+        txHash: result.hash,
+        url: Utils.logTransaction(result.hash),
+      };
+    } catch (error) {
+      Utils.logger("error", `Error unwrapping WMON: ${error.message}`);
+      throw error;
     }
   }
 
@@ -33,19 +87,25 @@ class BaseService {
       const response = await tx.wait();
       return {
         status: response.status === 1 ? "Success" : "Failed",
+        txHash: response.hash,
+        url: Utils.logTransaction(response.hash),
       };
     } catch (error) {
-      console.error("Transaction handling failed:", error);
+      Utils.logger("error", `Transaction handling failed: ${error.message}`);
       throw error;
     }
   }
 
   async checkGasPrice() {
-    const gasPrice = await this.api.getGasPrice();
+    const gasPrice = await this.explorerApi.getGasPrice();
     if (gasPrice && gasPrice.gweiPrice > config.gas.maxGwei) {
       throw new Error(`Gas price too high: ${gasPrice.gweiPrice} gwei`);
     }
     return gasPrice;
+  }
+
+  getWalletAddress() {
+    return this.wallet.address;
   }
 }
 
