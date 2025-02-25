@@ -1,52 +1,53 @@
 const { ethers } = require("ethers");
 const BaseService = require("./BaseService");
-const config = require("../config/config.json");
+const StakingContract = require("../contracts/StakingContract");
+const Utils = require("../core/Utils");
+const config = require("../../config/config");
 
 class StakingService extends BaseService {
   constructor(contractAddress) {
     super();
     this.contractAddress = contractAddress;
+    this.stakingContract = new StakingContract(contractAddress);
   }
 
   async stake(amount) {
     try {
-      const tx = {
-        to: this.contractAddress,
-        data: "0xd5575982",
-        gasLimit: BigInt(config.gas.stake),
-        value: amount,
-      };
+      await this.checkGasPrice();
 
-      const txResponse = await this.wallet.sendTransaction(tx);
-      const receipt = await txResponse.wait();
+      Utils.logger(
+        "info",
+        `Staking ${Utils.formatAmount(amount)} MON to ${this.contractAddress}`
+      );
+      const result = await this.stakingContract.stake(amount);
 
-      return {
-        status: receipt.status === 1 ? "Success" : "Failed",
-      };
+      return result;
     } catch (error) {
+      Utils.logger("error", `Staking error: ${error.message}`);
       throw error;
     }
   }
 
   async unstake(amount) {
     try {
-      const formattedAmount = amount.toString(16).padStart(64, "0");
+      await this.checkGasPrice();
 
-      const tx = {
-        to: this.contractAddress,
-        data: "0x6fed1ea7" + formattedAmount,
-        gasLimit: BigInt(config.gas.unstake),
-      };
+      Utils.logger(
+        "info",
+        `Unstaking ${Utils.formatAmount(amount)} from ${this.contractAddress}`
+      );
+      const result = await this.stakingContract.unstake(amount);
 
-      const txResponse = await this.wallet.sendTransaction(tx);
-      const receipt = await txResponse.wait();
-
-      return {
-        status: receipt.status === 1 ? "Success" : "Failed",
-      };
+      return result;
     } catch (error) {
+      Utils.logger("error", `Unstaking error: ${error.message}`);
       throw error;
     }
+  }
+
+  async getStakedBalance() {
+    const walletAddress = this.getWalletAddress();
+    return await this.stakingContract.getStakedBalance(walletAddress);
   }
 }
 
