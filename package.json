@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "",
   "main": "main.js",
-  "directories": {
-    "lib": "lib"
-  },
   "scripts": {
     "start": "node main.js"
   },
@@ -21,6 +18,7 @@
     "axios": "^1.7.9",
     "blessed": "^0.1.81",
     "blessed-contrib": "^4.11.0",
+    "dotenv": "^16.4.7",
     "ethers": "^6.13.5"
   }
 }
