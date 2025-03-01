@@ -17,7 +17,15 @@
       "router": "0xCa810D095e90Daae6e867c19DF6D9A8C56db2c89",
       "usdc": "0x62534E4bBD6D9ebAC0ac99aeaa0aa48E56372df0",
       "bean": "0x268E4E24E0051EC27b3D27A95977E71cE6875a05",
-      "jai": "0xCc5B42F9d6144DFDFb6fb3987a2A916af902F5f8"
+      "jai": "0x70F893f65E3C1d7f82aad72f71615eb220b74D10",
+      "wmon": "0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701"
+    },
+    "kuruswap": {
+      "router": "0xc816865f172d640d93712C68a7E1F83F3fA63235",
+      "utils": "0x9E50D9202bEc0D046a75048Be8d51bBa93386Ade",
+      "chog": "0xe0590015a873bf326bd645c3e1266d4db41c4e6b",
+      "dak": "0x0F0BDEbF0F83cD1EE3974779Bcb7315f9808c714",
+      "yaki": "0xfe140e1dCe99Be9F4F15d657CD9b7BF622270C50"
     }
   },
   "cycles": {
