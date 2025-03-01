@@ -5,6 +5,7 @@ const {
   SwapService,
   TokenService,
   BeanswapService,
+  KuruSwapService,
 } = require("./services");
 const Utils = require("./core/Utils");
 const config = require("../config/config");
@@ -64,6 +65,7 @@ class Application {
         rubicSwap: { name: "Rubic Swap", service: SwapService },
         izumiSwap: { name: "Izumi Swap", service: SwapService },
         beanSwap: { name: "Bean Swap", service: BeanswapService },
+        kuruSwap: { name: "Kuru Swap", service: KuruSwapService },
         magmaStaking: {
           name: "Magma Staking",
           service: StakingService,
@@ -188,8 +190,36 @@ class Application {
             this.dashboard.updateLog(
               `${name}: Unwrapped MON - ${unwrapResult.status}`
             );
+          } else if (service instanceof KuruSwapService) {
+            const tokens = [
+              config.contracts.kuruswap.chog,
+              config.contracts.kuruswap.dak,
+              config.contracts.kuruswap.yaki,
+            ];
+
+            const randomIndex = Math.floor(Math.random() * tokens.length);
+            const tokenAddress = tokens[randomIndex];
+            const tokenSymbol = ["CHOG", "DAK", "YAKI"][randomIndex];
+
+            const swapToTokenResult = await service.swapExactMONForTokens(
+              tokenAddress,
+              amount
+            );
+            this.dashboard.updateLog(
+              `${name}: Swapped MON to ${tokenSymbol} - ${swapToTokenResult.status}`
+            );
+
+            await Utils.delay(Utils.getRandomDelay());
+
+            const backAmount = ethers.parseUnits("0.01", 18);
+            const swapToMonResult = await service.swapExactTokensForMON(
+              tokenAddress,
+              backAmount
+            );
+            this.dashboard.updateLog(
+              `${name}: Swapped ${tokenSymbol} to MON - ${swapToMonResult.status}`
+            );
           } else if (service instanceof BeanswapService) {
-            // 1. First pair: MON to USDC and back - tetap dijalankan
             let tokenAddress = config.contracts.beanswap.usdc;
             let swapResult = await service.swapExactETHForTokens(
               tokenAddress,
@@ -201,12 +231,10 @@ class Application {
 
             await Utils.delay(Utils.getRandomDelay());
 
-            // Untuk swap balik, kita menggunakan amount random sesuai config
             let backAmount = Utils.getRandomAmount();
-            // Konversi ke format yang sesuai dengan desimal token
             let usdcAmount = ethers.parseUnits(
-              ethers.formatEther(backAmount).slice(0, 8), // Ambil 8 digit pertama saja
-              6 // USDC memiliki 6 desimal
+              ethers.formatEther(backAmount).slice(0, 8),
+              6
             );
 
             swapResult = await service.swapExactTokensForETH(
